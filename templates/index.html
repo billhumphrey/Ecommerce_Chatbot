@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <link rel="stylesheet" href="static/chatbot.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3>🤖 Tesco Chatbot</h3>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <div class="message bot-message">Hello! How can I assist you today?</div>
+        </div>
+        <div class="input-box">
+            <input type="text" id="user-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            let userInput = document.getElementById("user-input").value;
+            if (!userInput.trim()) return;
+
+            let chatBox = document.getElementById("chat-box");
+
+            // Append user message
+            let userMessageDiv = document.createElement("div");
+            userMessageDiv.className = "message user-message";
+            userMessageDiv.textContent = userInput;
+            chatBox.appendChild(userMessageDiv);
+
+            document.getElementById("user-input").value = "";
+
+            // Append typing indicator
+            let typingDiv = document.createElement("div");
+            typingDiv.className = "message bot-message";
+            typingDiv.textContent = "Typing...";
+            typingDiv.id = "typing-indicator"; // Assign an ID to remove later
+            chatBox.appendChild(typingDiv);
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Delay response by 1.5 seconds to simulate typing
+            setTimeout(() => {
+                // Send message to Flask backend
+                fetch("/predict", {
+                    method: "POST",
+                    body: new URLSearchParams({ "message": userInput }),
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove typing indicator
+                    chatBox.removeChild(typingDiv);
+
+                    // Append bot response
+                    let botMessageDiv = document.createElement("div");
+                    botMessageDiv.className = "message bot-message";
+                    botMessageDiv.textContent = data.response;
+                    chatBox.appendChild(botMessageDiv);
+
+                    chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll to latest message
+                });
+            }, 1500); // 1.5 seconds delay
+        }
+
+        document.getElementById("user-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
